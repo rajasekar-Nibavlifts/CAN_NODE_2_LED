@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -21,6 +21,18 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+
+
+
+CAN_RxHeaderTypeDef pRxHeader;
+uint32_t TxMailbox;
+CAN_DATA_st canData;
+
+uint8_t TxData[5];
+uint8_t RxData[5];
+
+
+extern void processCanReceivedMessage(uint8_t *buf ,uint8_t len);
 
 /* USER CODE END 0 */
 
@@ -54,20 +66,7 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-  CAN_FilterTypeDef canfilterconfig;
 
-  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
-  canfilterconfig.FilterBank = 18;  // which filter bank to use from the assigned ones
-  canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  canfilterconfig.FilterIdHigh = 0x103<<5;
-  canfilterconfig.FilterIdLow = 0;
-  canfilterconfig.FilterMaskIdHigh = 0x103<<5;
-  canfilterconfig.FilterMaskIdLow = 0x0000;
-  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
-  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  canfilterconfig.SlaveStartFilterBank = 20;  // how many filters to assign to the CAN1 (master can)
-
-  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
   /* USER CODE END CAN_Init 2 */
 
 }
@@ -110,6 +109,13 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    GPIO_InitStruct.Pin = GPIO_PIN_5;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+
   /* USER CODE END CAN1_MspInit 1 */
   }
 }
@@ -143,5 +149,74 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void transmitMessage(CAN_HandleTypeDef* canHandle , uint16_t msgId)
+{
+	
+	  TxData[0]=0x01;
+		TxData[1]=0x07;
+		TxData[2]=0x06;
+		TxData[3]=0x09;
+		TxData[4]=0x05;
+	
+  CAN_TxHeaderTypeDef pHeader;
+  pHeader.DLC=5;
+  pHeader.IDE=CAN_ID_STD;
+  pHeader.RTR=CAN_RTR_DATA;
+  pHeader.StdId=msgId;
+  HAL_CAN_AddTxMessage(canHandle, &pHeader, TxData, &TxMailbox);
+}
+
+
+void configureFilters(CAN_HandleTypeDef* canHandle , uint16_t mask , uint16_t id)
+{
+  CAN_FilterTypeDef canfilterconfig;
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 10;  // anything between 0 to SlaveStartFilterBank
+  canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  canfilterconfig.FilterIdHigh = (uint32_t)mask;
+  canfilterconfig.FilterIdLow = 0x0000;
+  canfilterconfig.FilterMaskIdHigh = (uint32_t)id;
+  canfilterconfig.FilterMaskIdLow = 0x0000;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  canfilterconfig.SlaveStartFilterBank = 13;  // 13 to 27 are assigned to slave CAN (CAN 2) OR 0 to 12 are assgned to CAN1
+
+  HAL_CAN_ConfigFilter(canHandle, &canfilterconfig);
+}
+
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+ // updateCanTxSatus(true);
+}
+
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  HAL_StatusTypeDef sts;
+  sts = HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &pRxHeader,RxData);
+  if(HAL_OK == sts)
+  {
+   // canData.rxLen = pRxHeader.DLC;
+    //canData.rxStatus = true;
+  }
+}
+
+
+void HAL_CAN_TxMailbox0AbortCallback(CAN_HandleTypeDef *hcan)
+{
+
+}
+
+
+void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
+{
+
+}
+
+
+
+
 
 /* USER CODE END 1 */

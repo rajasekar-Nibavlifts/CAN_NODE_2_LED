@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -24,8 +24,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-uint8_t value=0;
+#include "string.h"
+#include "stdint.h"
+#include "stdbool.h"
+//#include "displayHandler.h"
+//#include "ioControl.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,16 +38,30 @@ uint8_t value=0;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// 0000 0000 000
+/** use 3 bits for msg is enough , 5 bits can be skiped because use only std frame*/
+#define _ELEVEN_BIT_VAL(x)           (x<<5)
+
+#define CAN_RX0_MASK                _ELEVEN_BIT_VAL(0x000)  //0x7F0
+#define CAN_RX0_ID                  _ELEVEN_BIT_VAL(0x000)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define DISP_BUTTON_INTERVAL      500
+uint8_t  flag=0;
+uint8_t  NODEID=0X001;
 
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+//void getCommandFromDisp();
+//void CANprocess();
+
 
 /* USER CODE END PV */
 
@@ -57,39 +74,7 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-
-CAN_TxHeaderTypeDef TxHeader;
-CAN_RxHeaderTypeDef RxHeader;
-
-uint8_t TxData[8];
-uint8_t RxData[8];
-
-uint32_t TxMailbox;
-
-int datacheck = 0;
-
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	if (GPIO_Pin == GPIO_PIN_13)
-	{
-		TxData[0] = 100;   // ms Delay
-		TxData[1] = 40;    // loop rep
-
-		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
-	}
-}
-
-void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, RxData);
-	if (RxHeader.DLC == 2)
-	{
-		datacheck = 1;
-	}
-}
-
-
+uint8_t nodeId;
 /* USER CODE END 0 */
 
 /**
@@ -124,54 +109,28 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+ // initIOctrl();
+ // LOPinit();
+  configureFilters(&hcan , CAN_RX0_MASK , CAN_RX0_ID);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
   HAL_CAN_Start(&hcan);
-
-  // Activate the notification
-  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING);
-
-
-  TxHeader.DLC = 2;  // data length
-  TxHeader.IDE = CAN_ID_STD;
-  TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.StdId = 0x446;  // ID
-	
-  TxData[0] = 200;  // ms delay
-  TxData[1] = 20;  // loop rep
-
+ 
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+//  buttonDebug();
   while (1)
   {
+	// readDoorLockk();
+	//  emLockk();
+
+transmitMessage(&hcan,NODEID);
     /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */	
-		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9,GPIO_PIN_RESET);
-		 value=0;
-	   HAL_Delay (1000);
-		 value=1;
-		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9,GPIO_PIN_SET); 
-		 HAL_Delay (1000);
-		
-		 if (datacheck)
-	  {
-		  // blink the LED
-		  for (int i=0; i<RxData[1]; i++)
-		  {
-			  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_9);
-			  HAL_Delay(RxData[0]);
-		  }
-
-		  datacheck = 0;
-
-			TxData[0] = 100;   // ms Delay
-			TxData[1] = 40;    // loop rep
-
-			HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
-	  }	
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -213,6 +172,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 
 /* USER CODE END 4 */
 
