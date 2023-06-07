@@ -50,7 +50,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 #define DISP_BUTTON_INTERVAL      500
-uint8_t  NODEID=0X00;
+uint8_t  NODEID=0X002;
 uint8_t  flag=0;
 /* USER CODE END PM */
 
