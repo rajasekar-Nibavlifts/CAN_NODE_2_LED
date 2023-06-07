@@ -27,8 +27,8 @@
 #include "string.h"
 #include "stdint.h"
 #include "stdbool.h"
-//#include "displayHandler.h"
-//#include "ioControl.h"
+#include "trasmitreceive.h"
+#include "inputoutput.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,17 +50,18 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 #define DISP_BUTTON_INTERVAL      500
+uint8_t  NODEID=0X00;
 uint8_t  flag=0;
-uint8_t  NODEID=0X001;
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
+
+ 
 /* USER CODE BEGIN PV */
 
-//void getCommandFromDisp();
-//void CANprocess();
+void getCommandFromDisp();
+void CANprocess();
 
 
 /* USER CODE END PV */
@@ -109,25 +110,34 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
- // initIOctrl();
- // LOPinit();
+  initIOctrl();
+  //LOPinit();
   configureFilters(&hcan , CAN_RX0_MASK , CAN_RX0_ID);
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
   HAL_CAN_Start(&hcan);
- 
+  configureDisplayUartInRXmode();
 
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-//  buttonDebug();
+  //buttonDebug();
   while (1)
   {
-	// readDoorLockk();
-	//  emLockk();
-
-transmitMessage(&hcan,NODEID);
+		transmitMessage(&hcan,NODEID);
+		
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6) == GPIO_PIN_SET)
+      {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+      }
+    else
+      {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+      }
+		
+   
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -172,6 +182,9 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+
+
 
 
 /* USER CODE END 4 */

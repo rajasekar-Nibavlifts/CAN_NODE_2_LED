@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -29,7 +29,8 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef huart2;
@@ -37,14 +38,24 @@ extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN Private defines */
+struct displayUart
+{
+  uint8_t txBuffer[64];
+  uint8_t rxBuffer[16];
+  uint8_t txLength;
+  uint8_t rxlength;
+  volatile uint8_t rxStatus;
+};
 
+
+extern struct displayUart dispUartData;
 /* USER CODE END Private defines */
 
 void MX_USART2_UART_Init(void);
 void MX_USART3_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+bool configureDisplayUartInRXmode();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

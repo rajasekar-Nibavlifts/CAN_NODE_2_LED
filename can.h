@@ -30,7 +30,7 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 #include "gpio.h"
-//#include "ioControl.h"
+#include "inputoutput.h"
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan;
@@ -57,6 +57,7 @@ void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 void configureFilters(CAN_HandleTypeDef* canHandle , uint16_t mask , uint16_t id);
+//void transmitMessage(CAN_HandleTypeDef* canHandle , uint16_t msgId,uint8_t *msg , uint8_t length);
 void transmitMessage(CAN_HandleTypeDef* canHandle , uint16_t msgId);
 
 /* USER CODE END Prototypes */

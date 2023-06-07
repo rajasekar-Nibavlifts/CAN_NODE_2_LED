@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 
+struct displayUart dispUartData;
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart2;
@@ -81,6 +82,7 @@ void MX_USART3_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART3_Init 2 */
+  memset((uint8_t*)&dispUartData,false,sizeof(dispUartData));
 
   /* USER CODE END USART3_Init 2 */
 
@@ -198,5 +200,46 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == USART2) {
+    configureDisplayUartInRXmode();
+  }
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+  if(huart->Instance == USART3)
+  {
+  }
+  else if(huart->Instance == USART2)
+  {
+    dispUartData.rxStatus = true;
+    dispUartData.rxlength = huart->RxXferCount;
+  }
+}
+
+bool configureDisplayUartInRXmode()
+{
+  HAL_StatusTypeDef halStatus;
+  uint8_t retries = 10;
+  do
+  {
+    HAL_UART_Abort(&huart2);
+    halStatus = HAL_UARTEx_ReceiveToIdle_IT(&huart2, dispUartData.rxBuffer, sizeof(dispUartData.rxBuffer));
+    if( false == retries)
+    {
+      return true;
+    }
+  }while(HAL_OK != halStatus);
+  return false;
+}
+
 
 /* USER CODE END 1 */

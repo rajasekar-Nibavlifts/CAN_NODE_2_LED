@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
+#include "trasmitreceive.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -28,9 +29,9 @@ CAN_RxHeaderTypeDef pRxHeader;
 uint32_t TxMailbox;
 CAN_DATA_st canData;
 
-uint8_t TxData[5];
-uint8_t RxData[5];
-
+uint8_t TxData[8];
+uint8_t RxData[8];
+extern uint8_t  flag;
 
 extern void processCanReceivedMessage(uint8_t *buf ,uint8_t len);
 
@@ -51,7 +52,7 @@ void MX_CAN_Init(void)
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 16;
-  hcan.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_2TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
@@ -149,24 +150,44 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+/*void transmitMessage(CAN_HandleTypeDef* canHandle , uint16_t msgId,uint8_t *msg , uint8_t length)
+{
+  CAN_TxHeaderTypeDef pHeader;
+  pHeader.DLC=length;
+  pHeader.IDE=CAN_ID_STD;
+  pHeader.RTR=CAN_RTR_DATA;
+  pHeader.StdId=msgId;
+  HAL_CAN_AddTxMessage(canHandle, &pHeader, msg, &TxMailbox);
+}*/
 void transmitMessage(CAN_HandleTypeDef* canHandle , uint16_t msgId)
 {
+	if(flag==0)
+	{
+	TxData[0]=0x00;
 	
-	  TxData[0]=0x01;
-		TxData[1]=0x07;
-		TxData[2]=0x06;
-		TxData[3]=0x09;
-		TxData[4]=0x05;
+	}
+	else
+		{
+	TxData[0]=0x01;
+	
+
+	  }
+	  
+		TxData[1]=0x02;
+		TxData[2]=0x04;
+		TxData[3]=0x06;
+		TxData[4]=0x08;
+		TxData[5]=0x10;
+		TxData[6]=0x12;
+		TxData[7]=0x14;
 	
   CAN_TxHeaderTypeDef pHeader;
-  pHeader.DLC=5;
+  pHeader.DLC=8;
   pHeader.IDE=CAN_ID_STD;
   pHeader.RTR=CAN_RTR_DATA;
   pHeader.StdId=msgId;
   HAL_CAN_AddTxMessage(canHandle, &pHeader, TxData, &TxMailbox);
 }
-
 
 void configureFilters(CAN_HandleTypeDef* canHandle , uint16_t mask , uint16_t id)
 {
@@ -195,11 +216,11 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
   HAL_StatusTypeDef sts;
-  sts = HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &pRxHeader,RxData);
+  sts = HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &pRxHeader, canData.rxBuffer);
   if(HAL_OK == sts)
   {
-   // canData.rxLen = pRxHeader.DLC;
-    //canData.rxStatus = true;
+    canData.rxLen = pRxHeader.DLC;
+    canData.rxStatus = true;
   }
 }
 
